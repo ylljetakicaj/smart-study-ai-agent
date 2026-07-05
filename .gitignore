@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+study_memory.json
+*.tmp
+.DS_Store
+.streamlit/secrets.toml

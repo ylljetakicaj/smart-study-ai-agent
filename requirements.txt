@@ -1,0 +1,11 @@
+# --- Core LLM + Agent framework ---
+google-genai>=1.0.0            # Gemini model access (new unified SDK)
+google-adk>=0.2.0              # Google Agent Development Kit
+mcp>=1.2.0                     # Model Context Protocol SDK
+
+# --- Front-end ---
+streamlit>=1.36.0              # Web UI
+
+# --- Utilities ---
+python-dotenv>=1.0.0           # Load .env into environment variables
+json-repair>=0.30.0            # Tolerant JSON parsing for LLM output
