@@ -1,3 +1,3 @@
-"""Pantry Chef AI — application package."""
+"""Smart Study AI Agent — application package."""
 
 __version__ = "1.0.0"

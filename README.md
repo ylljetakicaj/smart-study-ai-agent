@@ -1,6 +1,6 @@
-# Pantry Chef AI
+# Smart Study AI Agent
 
-> Tell me what ingredients you have — I'll tell you what to cook.
+> Upload your lecture notes — summarize, quiz, plan, and track your progress with AI.
 
 A Kaggle AI Agents Capstone project built with Google Gemini, Google ADK, and the Model Context Protocol.
 
@@ -8,11 +8,19 @@ A Kaggle AI Agents Capstone project built with Google Gemini, Google ADK, and th
 
 ## Problem
 
-People often don't know what to cook with the ingredients they already have at home, leading to food waste and unnecessary shopping trips. Searching for recipes online requires knowing what you want to make in advance.
+Students waste hours passively re-reading notes without knowing what they actually understand. There is no easy way to turn a lecture PDF into practice questions, flashcards, or a personalized study plan — let alone get instant answers to questions about the material.
 
 ## Solution
 
-Pantry Chef AI is a conversational cooking assistant. You type the ingredients in your kitchen; the agent matches them against a recipe database and generates a personalised, step-by-step recipe — instantly and with minimal API usage.
+Smart Study AI Agent is an AI-powered study assistant. Upload your lecture notes (PDF, PowerPoint, or plain text) and the agent will:
+
+- **Summarize** the material in clear, student-friendly language
+- **Answer questions** grounded in your uploaded notes
+- **Generate quizzes** with multiple-choice questions and explanations
+- **Create flashcards** for spaced-repetition review
+- **Build a study plan** weighted by your weakest topics
+- **Track progress** by topic across quiz sessions
+- **Recommend** what to revise next based on mastery scores
 
 ## Architecture
 
@@ -20,34 +28,37 @@ Pantry Chef AI is a conversational cooking assistant. You type the ingredients i
 User (Streamlit UI)
        │
        ▼
-  PantryAgent (agents.py)
+  StudySession (agents.py)
        │
-       ├─── Local recipe matching ──► _local_match() [no API call]
+       ├─── TF-IDF Retriever ──► finds relevant note chunks  [no API call]
        │
-       ├─── MCP Server (mcp_server.py) ──► match_recipes() / get_recipe_details()
-       │         (launched over stdio by ADK MCPToolset)                [no API call]
+       ├─── ADK LlmAgent
+       │       ├─ FunctionTool: summarize, answer, explain, plan, recommend
+       │       └─ MCPToolset ──► app/mcp_server.py (wiki, arXiv, dictionary)
        │
-       └─── GeminiLLM.generate() ──► gemini-2.0-flash-lite  [1 API call]
+       └─── GeminiLLM.generate() ──► gemini-2.0-flash-lite  [1 API call per action]
 ```
 
-### Key design decision
-Recipe matching and detail lookup happen entirely in a local database (via the MCP server). Only the final recipe writing touches the LLM. This keeps usage well within the free-tier quota (1 500 requests/day).
+### Key design decisions
+- **Retrieval-augmented generation**: only relevant note chunks are sent to the LLM, keeping token usage low and answers grounded in the student's material.
+- **MCP server**: extends the agent with external knowledge (Wikipedia, arXiv, dictionary) without adding more LLM calls per turn.
+- **Progress-aware planning**: the study planner and recommendation engine read from the quiz history and allocate more time to weak topics automatically.
 
 ## Capstone Concepts Demonstrated
 
 | Concept | Where |
 |---|---|
-| **ADK LlmAgent + FunctionTool** | `app/agents.py` — `_build_adk_agent()` |
-| **MCP Server** | `app/mcp_server.py` — FastMCP with `match_recipes` and `get_recipe_details` tools |
-| **Security** | API key loaded from `.env` (never hardcoded); user input length-capped and sanitised before reaching the LLM |
+| **ADK Agent + FunctionTool** | `app/agents.py` — `StudySession.adk_agent()` |
+| **MCP Server** | `app/mcp_server.py` — FastMCP with `wiki_summary`, `arxiv_search`, `web_define` tools |
+| **Security** | API key loaded from `.env` (never hardcoded); user input sanitised before reaching the LLM |
 | **Deployability** | Streamlit app; `requirements.txt`; `.env.example` for setup |
 
 ## Setup
 
-### 1. Clone / download the repo
+### 1. Clone the repo
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ylljetakicaj/smart-study-ai-agent.git
 cd smart-study-ai-agent
 ```
 
@@ -57,7 +68,7 @@ cd smart-study-ai-agent
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
-# Mac/Linux
+# Mac / Linux
 source .venv/bin/activate
 ```
 
@@ -72,7 +83,7 @@ pip install -r requirements.txt
 Copy `.env.example` to `.env` and fill in your key from aistudio.google.com:
 
 ```
-GOOGLE_API_KEY=AIzaSy...
+GOOGLE_API_KEY=your_api_key_here
 ```
 
 ### 5. Run the app
@@ -87,10 +98,16 @@ Open http://localhost:8501 in your browser.
 
 ```
 app/
-  main.py          Streamlit UI
-  agents.py        GeminiLLM wrapper + PantryAgent + ADK agent builder
-  mcp_server.py    MCP server with local recipe database tools
-  prompts.py       Prompt templates
+  main.py          Streamlit UI (Chat, Quiz, Flashcards, Study Plan, Progress tabs)
+  agents.py        GeminiLLM wrapper + StudySession + ADK agent builder
+  mcp_server.py    MCP server with external knowledge tools (wiki, arXiv, dictionary)
+  prompts.py       Prompt templates for all agent tasks
+  tools.py         StudyTools namespace (summarize, quiz, flashcards, plan, progress)
+  retriever.py     TF-IDF document retriever + PDF/PPTX/TXT text extraction
+  quiz_generator.py  MCQ and exam question generation + grading
+  flashcards.py    Spaced-repetition flashcard generation
+  planner.py       Progress-aware study plan and recommendation engine
+  memory.py        Persistent conversation + progress memory (JSON)
   __init__.py
 requirements.txt
 .env.example
@@ -99,4 +116,4 @@ README.md
 
 ## Track
 
-**Concierge Agents** — helps individuals cook practical meals with what they already have, reducing food waste and decision fatigue.
+**Agents for Good** — advancing education by helping students study more effectively and reducing exam anxiety through personalized AI-powered tools.
